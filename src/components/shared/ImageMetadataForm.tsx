@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
-import { Loader2, Plus, X, AlertCircle, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react';
+import { useState, useRef, useEffect } from "react";
+import { Loader2, Plus, X, AlertCircle, CheckCircle2, ChevronDown, ChevronUp } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -7,7 +7,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,20 +18,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Card, CardContent, CardHeader, CardDescription } from '@/components/ui/card';
-import { useMetadataState } from '@/hooks/use-metadata-state';
-import type { Image } from '@/lib/types';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Card, CardContent, CardHeader, CardDescription } from "@/components/ui/card";
+import { useMetadataState } from "@/hooks/use-metadata-state";
 
 interface Props {
   open: boolean;
@@ -49,7 +44,26 @@ interface Props {
     url: string;
     previewUrl?: string;
     isAnalyzing?: boolean;
-    analysis?: any;
+    analysis?: {
+      objects: string[];
+      scenes: string[];
+      tags: string[];
+      technical_details: {
+        orientation: string;
+        quality: string;
+        lighting: string;
+        composition: string;
+      };
+      description: string;
+      raw_results: {
+        llm_analysis: {
+          objects: { label: string; confidence: number }[];
+          scenes: { label: string; confidence: number }[];
+          tags: string[];
+          description: string;
+        };
+      };
+    };
   }>;
   onRemoveImage?: (index: number) => void;
   isProcessing?: boolean;
@@ -69,8 +83,8 @@ export function ImageMetadataForm({
   images = [],
   onRemoveImage,
   isProcessing = false,
-  processingText = 'Saving...',
-  saveButtonText = 'Save Changes',
+  processingText = "Saving...",
+  saveButtonText = "Save Changes",
   showPreviewGrid = true,
   disabled = false,
 }: Props) {
@@ -89,28 +103,32 @@ export function ImageMetadataForm({
     hasUnsavedChanges,
     resetMetadata,
     setInitialMetadata,
+    updateDescription,
+    appendDescription,
   } = useMetadataState();
 
   useEffect(() => {
     if (initialMetadata) {
+      console.log("initial metadata", initialMetadata);
       const newMetadata = {
-        title: initialMetadata.title || '',
-        description: initialMetadata.description || '',
+        title: initialMetadata.title || "",
+        description: initialMetadata.description || "",
         tags: initialMetadata.tags || [],
         objects: initialMetadata.metadata?.objects || [],
         scenes: initialMetadata.metadata?.scenes || [],
         emotions: initialMetadata.metadata?.emotions || [],
         technical: {
-          orientation: initialMetadata.metadata?.technical_details?.orientation || 'landscape',
-          quality: initialMetadata.metadata?.technical_details?.quality || 'high',
-          lighting: initialMetadata.metadata?.technical_details?.lighting || 'natural',
+          orientation: initialMetadata.metadata?.technical_details?.orientation || "landscape",
+          quality: initialMetadata.metadata?.technical_details?.quality || "high",
+          lighting: initialMetadata.metadata?.technical_details?.lighting || "natural",
           composition: initialMetadata.metadata?.technical_details?.composition || [],
         },
       };
       updateMetadata(newMetadata);
       setInitialMetadata(JSON.stringify(newMetadata));
     }
-  }, [initialMetadata, updateMetadata, setInitialMetadata]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialMetadata]);
 
   const handleClose = () => {
     if (hasUnsavedChanges()) {
@@ -138,32 +156,30 @@ export function ImageMetadataForm({
   };
 
   const toggleAnalysis = (index: number) => {
-    setExpandedAnalysis(prev => 
-      prev.includes(index)
-        ? prev.filter(i => i !== index)
-        : [...prev, index]
+    setExpandedAnalysis((prev) =>
+      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
     );
   };
 
-  const getAnalysisStatus = (image: Props['images'][0]) => {
+  const getAnalysisStatus = (image: Props["images"][0]) => {
     if (image.isAnalyzing) {
       return {
         icon: <Loader2 className="h-4 w-4 animate-spin" />,
-        text: 'Analyzing...',
-        color: 'text-blue-500',
+        text: "Analyzing...",
+        color: "text-blue-500",
       };
     }
     if (image.analysis?.raw_results?.llm_analysis) {
       return {
         icon: <CheckCircle2 className="h-4 w-4" />,
-        text: 'Analysis complete',
-        color: 'text-green-500',
+        text: "Analysis complete",
+        color: "text-green-500",
       };
     }
     return {
       icon: <AlertCircle className="h-4 w-4" />,
-      text: 'Waiting for analysis',
-      color: 'text-yellow-500',
+      text: "Waiting for analysis",
+      color: "text-yellow-500",
     };
   };
 
@@ -173,17 +189,15 @@ export function ImageMetadataForm({
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
-            {description && (
-              <DialogDescription>{description}</DialogDescription>
-            )}
+            {description && <DialogDescription>{description}</DialogDescription>}
           </DialogHeader>
-          
+
           <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-2 gap-6">
               {showPreviewGrid && (
                 <div className="space-y-4">
                   <ScrollArea className="h-[400px] rounded-md border">
-                    <div className="p-4 grid grid-cols-2 gap-4">
+                    <div className="p-4 grid grid-cols-1 gap-4">
                       {images.map((image, index) => {
                         const status = getAnalysisStatus(image);
                         const isExpanded = expandedAnalysis.includes(index);
@@ -201,7 +215,9 @@ export function ImageMetadataForm({
                               </Button>
                             )}
                             <CardHeader className="p-2 pb-0">
-                              <CardDescription className={`flex items-center gap-2 ${status.color}`}>
+                              <CardDescription
+                                className={`flex items-center gap-2 ${status.color}`}
+                              >
                                 {status.icon}
                                 {status.text}
                               </CardDescription>
@@ -210,7 +226,7 @@ export function ImageMetadataForm({
                               <div className="aspect-square rounded-md overflow-hidden relative">
                                 <img
                                   src={image.previewUrl || image.url}
-                                  alt={metadata.title || ''}
+                                  alt={metadata.title || ""}
                                   className="w-full h-full object-cover"
                                 />
                                 {image.isAnalyzing && (
@@ -244,66 +260,102 @@ export function ImageMetadataForm({
                                   </CollapsibleTrigger>
                                   <CollapsibleContent className="space-y-2">
                                     <div className="flex flex-wrap gap-1">
-                                      {image.analysis.raw_results.llm_analysis.objects?.map((object, i) => {
-                                        const label = typeof object === 'string' ? object : object.label;
-                                        const confidence = typeof object === 'object' ? object.confidence : undefined;
-                                        
-                                        return (
-                                          <Button
-                                            key={`object-${i}`}
-                                            variant="outline"
-                                            size="sm"
-                                            className="h-6 text-xs text-green-600 hover:text-green-700"
-                                            onClick={() => addTag(label)}
-                                            type="button"
-                                          >
-                                            <Plus className="h-3 w-3 mr-1" />
-                                            {label}
-                                            {confidence !== undefined && (
-                                              <span className="ml-1 text-muted-foreground">
-                                                {(confidence * 100).toFixed(0)}%
-                                              </span>
-                                            )}
-                                          </Button>
-                                        );
-                                      })}
+                                      <Button
+                                        key={`description-generated`}
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-6 text-xs text-gray-600 hover:text-gray-700"
+                                        onClick={() =>
+                                          updateDescription(image.analysis?.description ?? "")
+                                        }
+                                        type="button"
+                                      >
+                                        <Plus className="h-3 w-3 mr-1" />
+                                        {image.analysis.description}
+                                      </Button>
                                     </div>
                                     <div className="flex flex-wrap gap-1">
-                                      {image.analysis.raw_results.llm_analysis.scenes?.map((scene, i) => {
-                                        const label = typeof scene === 'string' ? scene : scene.label;
-                                        const confidence = typeof scene === 'object' ? scene.confidence : undefined;
-                                        
-                                        return (
-                                          <Button
-                                            key={`scene-${i}`}
-                                            variant="outline"
-                                            size="sm"
-                                            className="h-6 text-xs text-blue-600 hover:text-blue-700"
-                                            onClick={() => addTag(label)}
-                                            type="button"
-                                          >
-                                            <Plus className="h-3 w-3 mr-1" />
-                                            {label}
-                                            {confidence !== undefined && (
-                                              <span className="ml-1 text-muted-foreground">
-                                                {(confidence * 100).toFixed(0)}%
-                                              </span>
-                                            )}
-                                          </Button>
-                                        );
-                                      })}
+                                      {image.analysis.raw_results.llm_analysis.objects?.map(
+                                        (object, i) => {
+                                          const label =
+                                            typeof object === "string" ? object : object.label;
+                                          const confidence =
+                                            typeof object === "object"
+                                              ? object.confidence
+                                              : undefined;
+
+                                          return (
+                                            <Button
+                                              key={`object-${i}`}
+                                              variant="outline"
+                                              size="sm"
+                                              className="h-6 text-xs text-green-600 hover:text-green-700"
+                                              onClick={() => addTag(label)}
+                                              type="button"
+                                            >
+                                              <Plus className="h-3 w-3 mr-1" />
+                                              {label}
+                                              {confidence !== undefined && (
+                                                <span className="ml-1 text-muted-foreground">
+                                                  {(confidence * 100).toFixed(0)}%
+                                                </span>
+                                              )}
+                                            </Button>
+                                          );
+                                        }
+                                      )}
+                                    </div>
+                                    <div className="flex flex-wrap gap-1">
+                                      {image.analysis.raw_results.llm_analysis.scenes?.map(
+                                        (scene, i) => {
+                                          const sceneLabel =
+                                            typeof scene === "string" ? scene : scene.label;
+                                          const confidence =
+                                            typeof scene === "object"
+                                              ? scene.confidence
+                                              : undefined;
+
+                                          return (
+                                            <Button
+                                              key={`scene-${i}`}
+                                              variant="outline"
+                                              size="sm"
+                                              className="h-6 text-xs text-blue-600 hover:text-blue-700"
+                                              onClick={() => appendDescription(sceneLabel)}
+                                              type="button"
+                                            >
+                                              <Plus className="h-3 w-3 mr-1" />
+                                              {sceneLabel}
+                                              {confidence !== undefined && (
+                                                <span className="ml-1 text-muted-foreground">
+                                                  {(confidence * 100).toFixed(0)}%
+                                                </span>
+                                              )}
+                                            </Button>
+                                          );
+                                        }
+                                      )}
                                     </div>
                                     <div className="mt-2 p-2 bg-muted rounded-md">
-                                      <pre className="text-xs whitespace-pre-wrap overflow-x-auto">
-                                        {JSON.stringify(image.analysis.raw_results, null, 2)}
-                                      </pre>
+                                      <Collapsible>
+                                        <CollapsibleTrigger className="text-xs text-muted-foreground">
+                                          View Raw Analysis Results
+                                        </CollapsibleTrigger>
+                                        <CollapsibleContent>
+                                          <pre className="text-xs whitespace-pre-wrap overflow-x-auto">
+                                            {JSON.stringify(image.analysis.raw_results, null, 2)}
+                                          </pre>
+                                        </CollapsibleContent>
+                                      </Collapsible>
                                     </div>
                                   </CollapsibleContent>
                                 </Collapsible>
-                              ) : !image.isAnalyzing && (
-                                <div className="h-32 mt-2 flex items-center justify-center text-muted-foreground text-sm">
-                                  No analysis results available yet
-                                </div>
+                              ) : (
+                                !image.isAnalyzing && (
+                                  <div className="h-32 mt-2 flex items-center justify-center text-muted-foreground text-sm">
+                                    No analysis results available yet
+                                  </div>
+                                )
                               )}
                             </CardContent>
                           </Card>
@@ -347,7 +399,7 @@ export function ImageMetadataForm({
                   />
                   <ScrollArea className="h-20 mt-2">
                     <div className="flex flex-wrap gap-2">
-                      {metadata.tags.map(tag => (
+                      {metadata.tags.map((tag) => (
                         <Badge
                           key={tag}
                           variant="secondary"
@@ -366,20 +418,28 @@ export function ImageMetadataForm({
                   <div className="grid grid-cols-2 gap-2 mt-2">
                     <Button
                       type="button"
-                      variant={metadata.technical.orientation === 'landscape' ? 'default' : 'outline'}
-                      onClick={() => updateMetadata({
-                        technical: { ...metadata.technical, orientation: 'landscape' }
-                      })}
+                      variant={
+                        metadata.technical.orientation === "landscape" ? "default" : "outline"
+                      }
+                      onClick={() =>
+                        updateMetadata({
+                          technical: { ...metadata.technical, orientation: "landscape" },
+                        })
+                      }
                       size="sm"
                     >
                       Landscape
                     </Button>
                     <Button
                       type="button"
-                      variant={metadata.technical.orientation === 'portrait' ? 'default' : 'outline'}
-                      onClick={() => updateMetadata({
-                        technical: { ...metadata.technical, orientation: 'portrait' }
-                      })}
+                      variant={
+                        metadata.technical.orientation === "portrait" ? "default" : "outline"
+                      }
+                      onClick={() =>
+                        updateMetadata({
+                          technical: { ...metadata.technical, orientation: "portrait" },
+                        })
+                      }
                       size="sm"
                     >
                       Portrait
@@ -390,17 +450,10 @@ export function ImageMetadataForm({
             </div>
 
             <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleClose}
-              >
+              <Button type="button" variant="outline" onClick={handleClose}>
                 Cancel
               </Button>
-              <Button 
-                type="submit"
-                disabled={isProcessing || !metadata.title || disabled}
-              >
+              <Button type="submit" disabled={isProcessing || !metadata.title || disabled}>
                 {isProcessing ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -415,10 +468,7 @@ export function ImageMetadataForm({
         </DialogContent>
       </Dialog>
 
-      <AlertDialog 
-        open={showUnsavedChangesDialog} 
-        onOpenChange={setShowUnsavedChangesDialog}
-      >
+      <AlertDialog open={showUnsavedChangesDialog} onOpenChange={setShowUnsavedChangesDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>

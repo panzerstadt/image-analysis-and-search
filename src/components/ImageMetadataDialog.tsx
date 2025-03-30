@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabase';
-import type { Image } from '@/lib/types';
-import { ImageMetadataForm } from '@/components/shared/ImageMetadataForm';
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
+import type { Image } from "@/lib/types";
+import { ImageMetadataForm } from "@/components/shared/ImageMetadataForm";
 
 interface Props {
   image: Image | null;
@@ -22,7 +22,7 @@ export function ImageMetadataDialog({ image, open, onOpenChange, onSave }: Props
       setIsLoading(true);
 
       const { error } = await supabase
-        .from('images')
+        .from("images")
         .update({
           title: metadata.title,
           description: metadata.description,
@@ -34,26 +34,27 @@ export function ImageMetadataDialog({ image, open, onOpenChange, onSave }: Props
             technical_details: metadata.technical,
           },
         })
-        .eq('id', image.id);
+        .eq("id", image.id);
 
       if (error) throw error;
 
       toast({
-        title: 'Success',
-        description: 'Image metadata updated successfully',
+        title: "Success",
+        description: "Image metadata updated successfully",
       });
 
       onSave();
     } catch (error) {
-      console.error('Error updating metadata:', error);
+      console.error("Error updating metadata:", error);
       toast({
-        title: 'Error',
-        description: 'Failed to update metadata. Please try again.',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to update metadata. Please try again.",
+        variant: "destructive",
       });
       throw error;
     } finally {
       setIsLoading(false);
+      onOpenChange(false);
     }
   };
 
