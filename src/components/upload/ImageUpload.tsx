@@ -1,12 +1,12 @@
-import { useRef, useState } from 'react';
-import { Upload, Loader2 } from 'lucide-react';
+import { useRef, useState } from "react";
+import { Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,16 +17,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { ImagePreview } from './ImagePreview';
-import { MetadataForm } from './MetadataForm';
-import { ImageFile } from './types';
-import { useImageUpload } from '@/hooks/use-image-upload';
-import { useImageAnalysis } from '@/hooks/use-image-analysis';
-import { useMetadataState } from '@/hooks/use-metadata-state';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { ImagePreview } from "./ImagePreview";
+import { MetadataForm } from "./MetadataForm";
+import { ImageFile } from "./types";
+import { useImageUpload } from "@/hooks/use-image-upload";
+import { useImageAnalysis } from "@/hooks/use-image-analysis";
+import { useMetadataState } from "@/hooks/use-metadata-state";
 
 interface Props {
   onUploadComplete: () => void;
@@ -54,7 +54,6 @@ export function ImageUpload({ onUploadComplete }: Props) {
     handleTagInputKeyDown,
     removeTag,
     addTag,
-    updateFromAnalysis,
     resetMetadata,
     hasUnsavedChanges,
     setInitialMetadata,
@@ -64,29 +63,30 @@ export function ImageUpload({ onUploadComplete }: Props) {
     const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
 
-    const newImages = files.map(file => ({
+    const newImages = files.map((file) => ({
       file,
+      url: URL.createObjectURL(file),
       previewUrl: URL.createObjectURL(file),
     }));
 
-    setSelectedImages(prev => [...prev, ...newImages]);
-    
+    setSelectedImages((prev) => [...prev, ...newImages]);
+
     if (!metadata.title && files.length === 1) {
       const newMetadata = {
         ...metadata,
-        title: files[0].name.split('.')[0],
+        title: files[0].name.split(".")[0],
       };
       updateMetadata(newMetadata);
       setInitialMetadata(JSON.stringify(newMetadata));
     }
-    
+
     setShowMetadataDialog(true);
   };
 
   const removeImage = (index: number) => {
     const imageToRemove = selectedImages[index];
     const remainingImages = selectedImages.filter((_, i) => i !== index);
-    
+
     if (imageToRemove?.previewUrl) {
       URL.revokeObjectURL(imageToRemove.previewUrl);
     }
@@ -110,7 +110,7 @@ export function ImageUpload({ onUploadComplete }: Props) {
   const handleDiscardChanges = () => {
     setShowUnsavedChangesDialog(false);
     setShowMetadataDialog(false);
-    selectedImages.forEach(image => {
+    selectedImages.forEach((image) => {
       if (image?.previewUrl) {
         URL.revokeObjectURL(image.previewUrl);
       }
@@ -120,7 +120,7 @@ export function ImageUpload({ onUploadComplete }: Props) {
   };
 
   const handleAnalyze = async (imageUrl: string, index: number) => {
-    setSelectedImages(prev => {
+    setSelectedImages((prev) => {
       const newImages = [...prev];
       if (newImages[index]) {
         newImages[index] = {
@@ -132,9 +132,9 @@ export function ImageUpload({ onUploadComplete }: Props) {
     });
 
     try {
-      const analysis = await analyzeImage(imageUrl, metadata, updateFromAnalysis);
+      const analysis = await analyzeImage(imageUrl);
 
-      setSelectedImages(prev => {
+      setSelectedImages((prev) => {
         const newImages = [...prev];
         if (newImages[index]) {
           newImages[index] = {
@@ -147,7 +147,7 @@ export function ImageUpload({ onUploadComplete }: Props) {
         return newImages;
       });
     } catch (error) {
-      setSelectedImages(prev => {
+      setSelectedImages((prev) => {
         const newImages = [...prev];
         if (newImages[index]) {
           newImages[index] = {
@@ -165,7 +165,7 @@ export function ImageUpload({ onUploadComplete }: Props) {
     if (selectedImages.length === 0) return;
 
     try {
-      await uploadImages(selectedImages, metadata, handleAnalyze);
+      await uploadImages(selectedImages, handleAnalyze);
     } catch (error) {
       // Error is already handled in the hook
     }
@@ -205,7 +205,7 @@ export function ImageUpload({ onUploadComplete }: Props) {
           <DialogHeader>
             <DialogTitle>Add Image Details</DialogTitle>
           </DialogHeader>
-          
+
           <form ref={formRef} onSubmit={handleUpload} className="space-y-6">
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-4">
@@ -238,14 +238,10 @@ export function ImageUpload({ onUploadComplete }: Props) {
             </div>
 
             <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleClose}
-              >
+              <Button type="button" variant="outline" onClick={handleClose}>
                 Cancel
               </Button>
-              {!selectedImages.some(img => img?.uploadedUrl) ? (
+              {!selectedImages.some((img) => img?.uploadedUrl) ? (
                 <Button type="submit" disabled={isUploading}>
                   {isUploading ? (
                     <>
@@ -253,14 +249,16 @@ export function ImageUpload({ onUploadComplete }: Props) {
                       Uploading...
                     </>
                   ) : (
-                    'Upload & Analyze'
+                    "Upload & Analyze"
                   )}
                 </Button>
               ) : (
-                <Button 
-                  type="button" 
+                <Button
+                  type="button"
                   onClick={handleSave}
-                  disabled={isUploading || !metadata.title || selectedImages.some(img => img?.isAnalyzing)}
+                  disabled={
+                    isUploading || !metadata.title || selectedImages.some((img) => img?.isAnalyzing)
+                  }
                 >
                   {isUploading ? (
                     <>
@@ -268,7 +266,7 @@ export function ImageUpload({ onUploadComplete }: Props) {
                       Saving...
                     </>
                   ) : (
-                    'Save All'
+                    "Save All"
                   )}
                 </Button>
               )}
@@ -277,10 +275,7 @@ export function ImageUpload({ onUploadComplete }: Props) {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog 
-        open={showUnsavedChangesDialog} 
-        onOpenChange={setShowUnsavedChangesDialog}
-      >
+      <AlertDialog open={showUnsavedChangesDialog} onOpenChange={setShowUnsavedChangesDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>

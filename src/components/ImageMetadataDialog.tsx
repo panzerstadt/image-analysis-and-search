@@ -64,7 +64,16 @@ export function ImageMetadataDialog({ image, open, onOpenChange, onSave }: Props
       onOpenChange={onOpenChange}
       onSave={handleSave}
       title="Edit Image Details"
-      initialMetadata={image || undefined}
+      initialMetadata={
+        image
+          ? {
+              title: image.title ?? undefined,
+              description: image.description ?? undefined,
+              tags: image.tags,
+              metadata: image.metadata,
+            }
+          : undefined
+      }
       images={image ? [{ url: image.url }] : []}
       isProcessing={isLoading}
       processingText="Saving..."

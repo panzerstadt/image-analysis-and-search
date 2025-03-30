@@ -1,15 +1,22 @@
-import { useState, useEffect } from 'react';
-import { Search, Filter, Image as ImageIcon, Loader2, LayoutGrid, Edit, Trash2, RefreshCw } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect } from "react";
+import {
+  Search,
+  Filter,
+  Image as ImageIcon,
+  Loader2,
+  LayoutGrid,
+  Edit,
+  Trash2,
+  RefreshCw,
+} from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,17 +27,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Image, SearchFilters } from '@/lib/types';
-import { supabase } from '@/lib/supabase';
-import { ImageMetadataDialog } from '@/components/ImageMetadataDialog';
-import { Slider } from '@/components/ui/slider';
-import { useToast } from '@/hooks/use-toast';
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Image, SearchFilters } from "@/lib/types";
+import { supabase } from "@/lib/supabase";
+import { ImageMetadataDialog } from "@/components/ImageMetadataDialog";
+import { Slider } from "@/components/ui/slider";
+import { useToast } from "@/hooks/use-toast";
 
 export function ImageSearch() {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const [filters, setFilters] = useState<SearchFilters>({});
   const [images, setImages] = useState<Image[]>([]);
   const [loading, setLoading] = useState(false);
@@ -45,30 +52,33 @@ export function ImageSearch() {
 
   useEffect(() => {
     loadImages();
-    window.addEventListener('image-uploaded', loadImages);
-    return () => window.removeEventListener('image-uploaded', loadImages);
+    window.addEventListener("image-uploaded", loadImages);
+    return () => window.removeEventListener("image-uploaded", loadImages);
   }, []);
 
   const loadImages = async () => {
     setLoading(true);
     try {
-      const { data: { session }, error: authError } = await supabase.auth.getSession();
+      const {
+        data: { session },
+        error: authError,
+      } = await supabase.auth.getSession();
       if (authError) throw authError;
-      if (!session) throw new Error('No authenticated session');
+      if (!session) throw new Error("No authenticated session");
 
       const { data, error } = await supabase
-        .from('images')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .from("images")
+        .select("*")
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
       setImages(data || []);
     } catch (error) {
-      console.error('Error loading images:', error);
+      console.error("Error loading images:", error);
       toast({
-        title: 'Error',
-        description: 'Failed to load images. Please try again.',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to load images. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -82,35 +92,35 @@ export function ImageSearch() {
 
     setLoading(true);
     try {
-      let searchQuery = supabase.rpc('search_images', { 
+      let searchQuery = supabase.rpc("search_images", {
         search_query: query.toLowerCase(),
-        similarity_threshold: 0.3
+        similarity_threshold: 0.3,
       });
 
       if (filters.objects?.length) {
-        searchQuery = searchQuery.containedBy('metadata->objects', filters.objects);
+        searchQuery = searchQuery.containedBy("metadata->objects", filters.objects);
       }
       if (filters.emotions?.length) {
-        searchQuery = searchQuery.containedBy('metadata->emotions', filters.emotions);
+        searchQuery = searchQuery.containedBy("metadata->emotions", filters.emotions);
       }
 
       const { data, error } = await searchQuery;
-      
+
       if (error) throw error;
       setImages(data || []);
 
       if (data?.length === 0) {
         toast({
-          title: 'No Results',
-          description: 'No images found matching your search criteria.',
+          title: "No Results",
+          description: "No images found matching your search criteria.",
         });
       }
     } catch (error) {
-      console.error('Error searching images:', error);
+      console.error("Error searching images:", error);
       toast({
-        title: 'Error',
-        description: 'Failed to search images. Please try again.',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to search images. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -133,34 +143,29 @@ export function ImageSearch() {
     try {
       setIsDeleting(true);
 
-      const fileName = deletingImage.url.split('/').pop();
+      const fileName = deletingImage.url.split("/").pop();
       if (fileName) {
-        const { error: storageError } = await supabase.storage
-          .from('images')
-          .remove([fileName]);
+        const { error: storageError } = await supabase.storage.from("images").remove([fileName]);
 
         if (storageError) throw storageError;
       }
 
-      const { error: dbError } = await supabase
-        .from('images')
-        .delete()
-        .eq('id', deletingImage.id);
+      const { error: dbError } = await supabase.from("images").delete().eq("id", deletingImage.id);
 
       if (dbError) throw dbError;
 
       toast({
-        title: 'Success',
-        description: 'Image deleted successfully',
+        title: "Success",
+        description: "Image deleted successfully",
       });
 
       loadImages();
     } catch (error) {
-      console.error('Error deleting image:', error);
+      console.error("Error deleting image:", error);
       toast({
-        title: 'Error',
-        description: 'Failed to delete image. Please try again.',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to delete image. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setIsDeleting(false);
@@ -176,10 +181,10 @@ export function ImageSearch() {
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-image`,
         {
-          method: 'POST',
+          method: "POST",
           headers: {
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
             imageUrl: image.url,
@@ -197,14 +202,14 @@ export function ImageSearch() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to analyze image');
+        throw new Error(errorData.error || "Failed to analyze image");
       }
 
       const analysis = await response.json();
 
       // Update the image with new analysis results
       const { error: updateError } = await supabase
-        .from('images')
+        .from("images")
         .update({
           description: analysis.description,
           tags: analysis.tags,
@@ -215,23 +220,23 @@ export function ImageSearch() {
             technical_details: analysis.technical_details,
           },
         })
-        .eq('id', image.id);
+        .eq("id", image.id);
 
       if (updateError) throw updateError;
 
       toast({
-        title: 'Success',
-        description: 'Image analysis updated successfully',
+        title: "Success",
+        description: "Image analysis updated successfully",
       });
 
       // Refresh the images list
       loadImages();
     } catch (error) {
-      console.error('Error reanalyzing image:', error);
+      console.error("Error reanalyzing image:", error);
       toast({
-        title: 'Error',
-        description: 'Failed to reanalyze image. Please try again.',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to reanalyze image. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setAnalyzingImageId(null);
@@ -248,14 +253,14 @@ export function ImageSearch() {
             onChange={(e) => setQuery(e.target.value)}
             className="pl-10"
             onKeyDown={(e) => {
-              if (e.key === 'Enter') {
+              if (e.key === "Enter") {
                 handleSearch();
               }
             }}
           />
           <Search className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
         </div>
-        
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline">
@@ -264,10 +269,25 @@ export function ImageSearch() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuItem>Objects</DropdownMenuItem>
-            <DropdownMenuItem>Colors</DropdownMenuItem>
-            <DropdownMenuItem>Emotions</DropdownMenuItem>
-            <DropdownMenuItem>Technical</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setFilters((prev) => ({ ...prev, objects: [] }))}>
+              Objects
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setFilters((prev) => ({ ...prev, colors: [] }))}>
+              Colors
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setFilters((prev) => ({ ...prev, emotions: [] }))}>
+              Emotions
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() =>
+                setFilters((prev) => ({
+                  ...prev,
+                  technical: { orientation: undefined, quality: undefined, lighting: undefined },
+                }))
+              }
+            >
+              Technical
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
@@ -289,8 +309,8 @@ export function ImageSearch() {
         </div>
       </div>
 
-      <div 
-        className="grid gap-4" 
+      <div
+        className="grid gap-4"
         style={{
           gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
         }}
@@ -305,7 +325,7 @@ export function ImageSearch() {
               <div className="aspect-square relative">
                 <img
                   src={image.url}
-                  alt={image.title || ''}
+                  alt={image.title || ""}
                   className="object-cover w-full h-full"
                 />
                 <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -321,11 +341,7 @@ export function ImageSearch() {
                       <RefreshCw className="h-4 w-4" />
                     )}
                   </Button>
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    onClick={() => handleEditImage(image)}
-                  >
+                  <Button variant="secondary" size="icon" onClick={() => handleEditImage(image)}>
                     <Edit className="h-4 w-4" />
                   </Button>
                   <Button
@@ -338,14 +354,12 @@ export function ImageSearch() {
                 </div>
               </div>
               <CardContent className="p-4">
-                <h3 className="font-semibold mb-2 truncate" title={image.title || ''}>
+                <h3 className="font-semibold mb-2 truncate" title={image.title || ""}>
                   {image.title}
                 </h3>
                 <ScrollArea className="h-32 mb-4">
                   {image.description && (
-                    <p className="text-sm text-muted-foreground mb-4">
-                      {image.description}
-                    </p>
+                    <p className="text-sm text-muted-foreground mb-4">{image.description}</p>
                   )}
                   <div className="flex flex-wrap gap-1">
                     {image.tags?.map((tag, index) => (
@@ -380,8 +394,8 @@ export function ImageSearch() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the image
-              and remove it from our servers.
+              This action cannot be undone. This will permanently delete the image and remove it
+              from our servers.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -397,7 +411,7 @@ export function ImageSearch() {
                   Deleting...
                 </>
               ) : (
-                'Delete'
+                "Delete"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

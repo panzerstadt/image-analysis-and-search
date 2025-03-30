@@ -28,6 +28,32 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader, CardDescription } from "@/components/ui/card";
 import { useMetadataState } from "@/hooks/use-metadata-state";
 
+export interface Image {
+  url: string;
+  previewUrl?: string;
+  isAnalyzing?: boolean;
+  analysis?: {
+    objects: string[];
+    scenes: string[];
+    tags: string[];
+    technical_details: {
+      orientation: string;
+      quality: string;
+      lighting: string;
+      composition: string;
+    };
+    description: string;
+    raw_results: {
+      llm_analysis: {
+        objects: { label: string; confidence: number }[];
+        scenes: { label: string; confidence: number }[];
+        tags: string[];
+        description: string;
+      };
+    };
+  };
+}
+
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -40,31 +66,7 @@ interface Props {
     tags?: string[];
     metadata?: any;
   };
-  images?: Array<{
-    url: string;
-    previewUrl?: string;
-    isAnalyzing?: boolean;
-    analysis?: {
-      objects: string[];
-      scenes: string[];
-      tags: string[];
-      technical_details: {
-        orientation: string;
-        quality: string;
-        lighting: string;
-        composition: string;
-      };
-      description: string;
-      raw_results: {
-        llm_analysis: {
-          objects: { label: string; confidence: number }[];
-          scenes: { label: string; confidence: number }[];
-          tags: string[];
-          description: string;
-        };
-      };
-    };
-  }>;
+  images?: Image[];
   onRemoveImage?: (index: number) => void;
   isProcessing?: boolean;
   processingText?: string;
@@ -161,7 +163,7 @@ export function ImageMetadataForm({
     );
   };
 
-  const getAnalysisStatus = (image: Props["images"][0]) => {
+  const getAnalysisStatus = (image: Image) => {
     if (image.isAnalyzing) {
       return {
         icon: <Loader2 className="h-4 w-4 animate-spin" />,

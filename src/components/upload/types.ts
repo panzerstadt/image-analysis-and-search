@@ -11,8 +11,8 @@ export interface ImageAnalysis {
   };
   raw_results: {
     llm_analysis: {
-      objects: Array<{ label: string; confidence: number; } | string>;
-      scenes: Array<{ label: string; confidence: number; } | string>;
+      objects: Array<{ label: string; confidence: number } | string>;
+      scenes: Array<{ label: string; confidence: number } | string>;
       tags: string[];
       description: string;
     };
@@ -21,6 +21,7 @@ export interface ImageAnalysis {
 
 export interface ImageFile {
   file: File;
+  url: string;
   previewUrl: string;
   uploadedUrl?: string;
   analysis?: ImageAnalysis;
@@ -44,16 +45,16 @@ export interface MetadataFormData {
 }
 
 export const defaultMetadata: MetadataFormData = {
-  title: '',
-  description: '',
+  title: "",
+  description: "",
   tags: [],
   objects: [],
   scenes: [],
   emotions: [],
   technical: {
-    orientation: 'landscape',
-    quality: 'high',
-    lighting: 'natural',
+    orientation: "landscape",
+    quality: "high",
+    lighting: "natural",
     composition: [],
   },
 };
